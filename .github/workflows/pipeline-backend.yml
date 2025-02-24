@@ -1,0 +1,85 @@
+name: BM Backend API Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    name: Compile project
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with: 
+          fetch-depth: 0
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "corretto"
+
+      - name: Compile project
+        run: |
+          cd server/backend
+          chmod +x ./mvnw
+          ./mvnw clean compile
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip')"
+    name: Unit tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "corretto"
+
+      - name: Run Unit Tests
+        run: |
+          cd server/backend
+          chmod +x ./mvnw
+          ./mvnw clean test
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build backend
+    needs: [compile, unit-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "corretto"
+
+      - name: Compile project
+        run: |
+          cd server/backend
+          chmod +x ./mvnw
+          ./mvnw clean compile
+
+  # deploy:
+  #   name: Deploy to Render
+  #   runs-on: ubuntu-latest
+  #   if: "!contains(github.event.head_commit.message, 'skip')"
+  #   needs: [build]
+  #   steps:
+  #     - name: Trigger Render Deploy
+  #       env:
+  #         deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+  #       run: |
+  #         if [ -z "$deploy_url" ]; then echo "Error: deploy_url is not set"; exit 1; fi
+  #         curl -X GET "$deploy_url"
