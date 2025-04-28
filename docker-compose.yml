@@ -1,0 +1,53 @@
+services:
+  postgres:
+    container_name: postgres-sql-bm
+    image: postgres
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: book_management
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - 5432:5432
+    networks:
+      - spring-demo
+    restart: unless-stopped
+    
+  mail-dev:
+    container_name: mail-dev-bm
+    image: maildev/maildev
+    ports:
+      - 1080:1080
+      - 1025:1025
+    networks:
+      - spring-demo
+    
+  bm-api:
+    container_name: bm-api
+    image: dhanesh/bm-api:1.0.11
+    environment:
+      EMAIL_HOST_NAME: ${EMAIL_HOST_NAME}
+      EMAIL_USER_NAME: ${EMAIL_USER_NAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+    ports:
+      - 8088:8088
+    volumes:
+      - bm-api-storage:/app/uploads
+    networks:
+      - spring-demo
+    depends_on:
+      - postgres
+
+networks:
+  spring-demo:
+    driver: bridge
+
+volumes:
+  postgres:
+    driver: local
+  bm-api-storage:
+    driver: local
+
+
